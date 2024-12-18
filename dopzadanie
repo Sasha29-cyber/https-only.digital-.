@@ -1,0 +1,77 @@
+import requests
+from bs4 import BeautifulSoup
+
+def test_footer_elements(url):
+    """
+    Функция для проверки наличия футера и элементов в нем на странице сайта.
+
+    Args:
+        url (str): URL страницы сайта для проверки.
+
+    Returns:
+        bool: True, если футер и все элементы найдены, False иначе.
+    """
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Проверка на HTTP ошибки
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Найти футер по тегу (может потребоваться корректировка селектора)
+        footer = soup.find('footer')  # Используем тэг footer
+
+        if not footer:
+            print(f"Ошибка: Футер не найден на странице {url}")
+            return False
+
+        # Определение элементов футера для проверки
+        required_elements = [
+            {'tag': 'p', 'text': '© 2024 Only Digital. Все права защищены'},
+            {'tag': 'a', 'href': '/privacy-policy/', 'text': 'Политика конфиденциальности'},
+            {'tag': 'a', 'href': '/cookie-policy/', 'text': 'Cookie policy'},
+            {'tag': 'a', 'href': '/oferta/', 'text': 'Договор оферта'},
+        ]
+
+        for element_data in required_elements:
+            element = footer.find(element_data['tag'], text=element_data.get('text'))
+            if not element:
+                 if 'href' in element_data:
+                     element = footer.find(element_data['tag'], href=element_data.get('href'))
+                 if not element:
+                    print(f"Ошибка: Элемент {element_data} не найден в футере на странице {url}")
+                    return False
+
+        print(f"Футер и все необходимые элементы найдены на странице {url}")
+        return True
+
+    except requests.exceptions.RequestException as e:
+         print(f"Ошибка при запросе URL {url}: {e}")
+         return False
+    except Exception as e:
+        print(f"Неизвестная ошибка при обработке страницы {url}: {e}")
+        return False
+
+def test_all_pages_footer():
+  """
+  Функция для проверки футера на нескольких страницах сайта
+  """
+  pages = [
+    'https://only.digital/',
+    'https://only.digital/blog/',
+    'https://only.digital/portfolio/',
+    'https://only.digital/contact/'
+  ]
+
+  all_tests_passed = True
+
+  for page in pages:
+      if not test_footer_elements(page):
+        all_tests_passed = False
+  return all_tests_passed
+
+# Запуск теста
+if __name__ == '__main__':
+  if test_all_pages_footer():
+    print("\nВсе тесты пройдены")
+  else:
+    print("\nЕсть ошибки в тестах")
